@@ -29,6 +29,3 @@ sysinfo.txt
 
 # Ignore package cache
 Packages/com.alexnikolaou.rateus/.git/
-
-# Ignore generated meta files if you're exporting source only
-*.meta
