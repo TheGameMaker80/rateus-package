@@ -1,0 +1,11 @@
+{
+    "name": "com.alexnikolaou.rateus",
+    "version": "1.0.0",
+    "displayName": "Rate Us",
+    "description": "A simple system to prompt the users to rate the app.",
+    "unity": "2022.3",
+    "author": {
+        "name": "Alex Nikolaou",
+        "email": "robonikolaou80@gmail.com"
+    }
+}

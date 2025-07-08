@@ -1,0 +1,6 @@
+{
+    "rateFirstSessionWins" : 5,
+    "rateMaxTimesShownInSession" : 2,
+    "rateMaxTimesShownInVersion" : 5,
+    "rateNotFirstSessionWinsMod" : 3
+}

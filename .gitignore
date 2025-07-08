@@ -1,0 +1,34 @@
+# Ignore macOS system files
+.DS_Store
+
+# Ignore Windows system files
+Thumbs.db
+desktop.ini
+
+# Ignore Unity-generated folders
+Library/
+Temp/
+Obj/
+Build/
+Builds/
+Logs/
+UserSettings/
+MemoryCaptures/
+
+# Ignore JetBrains (Rider) / VS Code settings
+.idea/
+.vscode/
+*.csproj
+*.sln
+*.user
+*.pidb
+*.suo
+
+# Ignore Unity crash reports
+sysinfo.txt
+
+# Ignore package cache
+Packages/com.alexnikolaou.rateus/.git/
+
+# Ignore generated meta files if you're exporting source only
+*.meta
