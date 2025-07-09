@@ -19,6 +19,7 @@ public class RateUsConfigHandler
                 throw new Exception("Json string is empty");
 
             config = JsonUtility.FromJson<RateUsConfig>(configJson);
+            message = "Rate Us Configurations succeed";
             succeed = true;
         }
         catch (Exception err)
