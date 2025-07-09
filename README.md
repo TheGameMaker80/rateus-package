@@ -46,6 +46,17 @@ RateUsManager.Instance.Initialize((success, message) =>
 });
 ```
 
+#### ✅ Optional: Check if `RateUsManager` is already initialized
+
+Before calling any methods, you can safely check if the manager has already been initialized:
+
+```csharp
+if (RateUsManager.Instance.Initialized)
+{
+    // Safe to use RateUsManager methods
+}
+```
+
 ---
 
 ### 3. (Optional) Set up custom configuration
