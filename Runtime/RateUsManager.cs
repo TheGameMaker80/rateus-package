@@ -7,6 +7,7 @@ namespace alexnikolaou.RateUs
 {
     public class RateUsManager
     {
+        public RateUsConfigHandler configHandler = null;
         private static RateUsManager _instance;
         private RateUsConfig _config;
         private bool _initialized = false;
@@ -38,12 +39,12 @@ namespace alexnikolaou.RateUs
 
         private RateUsManager() { }
 
-        private void PrintValues()
+        public void PrintValues()
         {
-            Debug.Log("Session" + _session);
-            Debug.Log("Session Wins" + _sessionWins);
-            Debug.Log("Session Times Shown" + _sessionTimesShown);
-            Debug.Log("App Version Rates" + PlayerPrefs.GetString("rate_us_app_version"));
+            Debug.Log("Session: " + _session);
+            Debug.Log("Session Wins: " + _sessionWins);
+            Debug.Log("Session Times Shown: " + _sessionTimesShown);
+            Debug.Log("App Version Rates: " + PlayerPrefs.GetString("rate_us_app_version"));
         }
 
         private void SetSession()
@@ -82,7 +83,6 @@ namespace alexnikolaou.RateUs
                 _versionRates.rates = 0;
                 PlayerPrefs.SetString("rate_us_app_version", JsonUtility.ToJson(_versionRates));
             }
-
         }
 
         public void Initialize(Action<bool, string> onComplete)
@@ -90,36 +90,20 @@ namespace alexnikolaou.RateUs
             SetSession();
             SetVersionRates();
 
-            string message = "";
-            bool succeed = false;
+            //User default if none found
+            if (configHandler == null)
+            {
+                configHandler = new RateUsConfigHandler();
+            }
+
             _initialized = false;
-            TextAsset jsonFile = Resources.Load<TextAsset>("rate_us_config");
 
-            if (jsonFile != null)
+            configHandler.GetConfig((success, msg, config)=>
             {
-                try
-                {
-                    _config = JsonUtility.FromJson<RateUsConfig>(jsonFile.text);
-                    message = "Rate us Configuration Succeed";
-                    succeed = true;
-                    _initialized = true;
-                }
-                catch (Exception err)
-                {
-                    message = err.Message;
-                }
-            }
-            else
-            {
-                message = "Rate us Configuration Failed";
-            }
-
-            onComplete.Invoke(succeed, message);
-        }
-
-        public RateUsConfig GetConfig()
-        {
-            return _config;
+                _initialized = success;
+                _config = config;
+                onComplete.Invoke(success, msg);
+            });
         }
 
         public void CheckForShowingRateUsOnWin(Action<bool> onComplete)
@@ -144,33 +128,7 @@ namespace alexnikolaou.RateUs
                 }
             }
 
-            // PrintValues();
-
             onComplete.Invoke(showRateUs);
         }
-    }
-
-    [Serializable]
-    public class VersionRates
-    {
-        public string version;
-        public int rates;
-
-        public VersionRates() { }
-
-        public VersionRates(string ver, int rat)
-        {
-            version = ver;
-            rates = rat;
-        }
-    }
-
-    [Serializable]
-    public class RateUsConfig
-    {
-        public int rateFirstSessionWins;
-        public int rateMaxTimesShownInSession;
-        public int rateMaxTimesShownInVersion;
-        public int rateNotFirstSessionWinsMod;
     }
 }
