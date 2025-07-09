@@ -1,6 +1,6 @@
 {
     "name": "com.alexnikolaou.rateus",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "displayName": "Rate Us",
     "description": "A simple system to prompt the users to rate the app.",
     "unity": "2022.3",
