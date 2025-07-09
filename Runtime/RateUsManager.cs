@@ -45,6 +45,7 @@ namespace alexnikolaou.RateUs
             Debug.Log("Session Wins: " + _sessionWins);
             Debug.Log("Session Times Shown: " + _sessionTimesShown);
             Debug.Log("App Version Rates: " + PlayerPrefs.GetString("rate_us_app_version"));
+            
         }
 
         private void SetSession()
