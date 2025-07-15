@@ -11,10 +11,18 @@ namespace alexnikolaou.RateUs
 {
     public class RateUsManager
     {
-        #if UNITY_IOS && !UNITY_EDITOR
-        [DllImport("__Internal")]
-        private extern void RequestReview();
-        #endif
+        private IRateUsPlatform platform;
+
+        private void InitPlatform()
+        {
+#if UNITY_IOS && !UNITY_EDITOR
+            platform = new RateUsIOS();
+#elif UNITY_ANDROID && !UNITY_EDITOR
+            platform = new RateUsAndroid();
+#else
+            platform = new RateUsStub();
+#endif
+        }
 
         public RateUsConfigHandler configHandler = null;
         private static RateUsManager _instance;
@@ -100,8 +108,9 @@ namespace alexnikolaou.RateUs
 
         public void Initialize(Action<bool, string> onComplete)
         {
+            InitPlatform();
             //Android
-            _reviewManager = new ReviewManager();
+            // _reviewManager = new ReviewManager();
 
             SetSession();
             SetVersionRates();
@@ -161,11 +170,7 @@ namespace alexnikolaou.RateUs
 
                     if (_sessionWins >= sessionWins)
                     {
-                        #if UNITY_IOS
-                        result = await RequestIOSReview();
-                        #elif UNITY_ANDROID
-                        result = await RequestAndroidReview();
-                        #endif
+                        result = await RequestReview();
                         _sessionTimesShown++;
                         _sessionWins = 0;
                         AddViewToVersion();
@@ -175,50 +180,60 @@ namespace alexnikolaou.RateUs
             return result;
         }
 
-        private Task<TaskResult> RequestIOSReview()
-        {        
+        private Task<TaskResult> RequestReview()
+        { 
             var tcs = new TaskCompletionSource<TaskResult>();
 
-            #if UNITY_IOS && !UNITY_EDITOR
-            RequestReview();
-            #endif
+            platform.RequestReview();
 
-            tcs.SetResult(new TaskResult(true, "iOS: In-App Review requested!"));
+            tcs.SetResult(new TaskResult(true, $"{nameof(platform)}: In-App Review requested!"));
             return tcs.Task;
         }
 
-        private async Task<TaskResult> RequestAndroidReview()
-        {
-            var requestFlowOperation = _reviewManager.RequestReviewFlow();
+//         private Task<TaskResult> RequestIOSReview()
+//         {
+//             var tcs = new TaskCompletionSource<TaskResult>();
 
-            await AwaitPlayCoreTask(requestFlowOperation);
+        // #if UNITY_IOS && !UNITY_EDITOR
+        //             RequestReview();
+        // #endif
 
-            if (requestFlowOperation.Error != ReviewErrorCode.NoError)
-            {
-                return new TaskResult(false, $"Android: RequestReviewFlow failed: {requestFlowOperation.Error}");
-            }
+        //             tcs.SetResult(new TaskResult(true, "iOS: In-App Review requested!"));
+        //             return tcs.Task;
+        //         }
 
-            PlayReviewInfo playReviewInfo = requestFlowOperation.GetResult();
+        //         private async Task<TaskResult> RequestAndroidReview()
+        //         {
+        //             var requestFlowOperation = _reviewManager.RequestReviewFlow();
 
-            var launchFlowOperation = _reviewManager.LaunchReviewFlow(playReviewInfo);
+        //             await AwaitPlayCoreTask(requestFlowOperation);
 
-            await AwaitPlayCoreTask(launchFlowOperation);
+        //             if (requestFlowOperation.Error != ReviewErrorCode.NoError)
+        //             {
+        //                 return new TaskResult(false, $"Android: RequestReviewFlow failed: {requestFlowOperation.Error}");
+        //             }
 
-            if (launchFlowOperation.Error != ReviewErrorCode.NoError)
-            {
-                return new TaskResult(false, $"Android: LaunchReviewFlow failed: {launchFlowOperation.Error}");
-            }
+        //             PlayReviewInfo playReviewInfo = requestFlowOperation.GetResult();
 
-            return new TaskResult(true, "Android: In-app review shown successfully.");
-        }
+        //             var launchFlowOperation = _reviewManager.LaunchReviewFlow(playReviewInfo);
 
-        // Helper to await Play Core operations
-        private Task AwaitPlayCoreTask<T>(PlayAsyncOperation<T, ReviewErrorCode> operation)
-        {
-            var tcs = new TaskCompletionSource<object>();
-            operation.Completed += _ => tcs.SetResult(null);
-            return tcs.Task;
-        }
+        //             await AwaitPlayCoreTask(launchFlowOperation);
+
+        //             if (launchFlowOperation.Error != ReviewErrorCode.NoError)
+        //             {
+        //                 return new TaskResult(false, $"Android: LaunchReviewFlow failed: {launchFlowOperation.Error}");
+        //             }
+
+        //             return new TaskResult(true, "Android: In-app review shown successfully.");
+        //         }
+
+        //         // Helper to await Play Core operations
+        //         private Task AwaitPlayCoreTask<T>(PlayAsyncOperation<T, ReviewErrorCode> operation)
+        //         {
+        //             var tcs = new TaskCompletionSource<object>();
+        //             operation.Completed += _ => tcs.SetResult(null);
+        //             return tcs.Task;
+        //         }
     }
 
     public struct TaskResult
@@ -230,6 +245,14 @@ namespace alexnikolaou.RateUs
         {
             succeed = success;
             msg = message;
+        }
+    }
+
+    public class RateUsStub : IRateUsPlatform
+    {
+        public void RequestReview()
+        {
+            Debug.Log("In-app review not available on this platform.");
         }
     }
 }

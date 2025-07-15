@@ -7,10 +7,5 @@
     "author": {
         "name": "Alex Nikolaou",
         "email": "robonikolaou80@gmail.com"
-    },
-    "dependencies": {
-        "com.google.play.common": "1.9.2",
-        "com.google.play.core": "1.8.6",
-        "com.google.play.review": "1.8.4"
     }
 }

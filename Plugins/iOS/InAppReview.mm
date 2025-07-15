@@ -1,7 +1,7 @@
 #import <StoreKit/StoreKit.h>
 
 extern "C" {
-    void RequestReview()
+    void _RequestReview()
     {
         if(@available(iOS 10.3, *))
         {
