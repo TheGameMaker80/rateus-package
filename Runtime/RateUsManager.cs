@@ -3,10 +3,19 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+using Google.Play.Review;
+using System.Threading.Tasks;
+using Google.Play.Common;
+
 namespace alexnikolaou.RateUs
 {
     public class RateUsManager
     {
+        #if UNITY_IOS && !UNITY_EDITOR
+        [DllImport("__Internal")]
+        private extern void RequestReview();
+        #endif
+
         public RateUsConfigHandler configHandler = null;
         private static RateUsManager _instance;
         private RateUsConfig _config;
@@ -17,6 +26,9 @@ namespace alexnikolaou.RateUs
         private int _sessionTimesShown;
 
         private VersionRates _versionRates;
+
+        //Create instance of ReviewManager(Android)
+        private ReviewManager _reviewManager;
 
         public bool Initialized
         {
@@ -45,7 +57,7 @@ namespace alexnikolaou.RateUs
             Debug.Log("Session Wins: " + _sessionWins);
             Debug.Log("Session Times Shown: " + _sessionTimesShown);
             Debug.Log("App Version Rates: " + PlayerPrefs.GetString("rate_us_app_version"));
-            
+
         }
 
         private void SetSession()
@@ -88,6 +100,9 @@ namespace alexnikolaou.RateUs
 
         public void Initialize(Action<bool, string> onComplete)
         {
+            //Android
+            _reviewManager = new ReviewManager();
+
             SetSession();
             SetVersionRates();
 
@@ -99,7 +114,7 @@ namespace alexnikolaou.RateUs
 
             _initialized = false;
 
-            configHandler.GetConfig((success, msg, config)=>
+            configHandler.GetConfig((success, msg, config) =>
             {
                 _initialized = success;
                 _config = config;
@@ -130,6 +145,91 @@ namespace alexnikolaou.RateUs
             }
 
             onComplete.Invoke(showRateUs);
+        }
+
+        public async Task<TaskResult> NewCheckForShowingRateUsOnWin()
+        {
+            TaskResult result = new TaskResult(false, "Rate us not available");
+
+            if (_versionRates.rates < _config.rateMaxTimesShownInVersion)
+            {
+                if (_sessionTimesShown < _config.rateMaxTimesShownInSession)
+                {
+                    int sessionWins = _session == 1 ? _config.rateFirstSessionWins : _config.rateNotFirstSessionWinsMod;
+
+                    _sessionWins++;
+
+                    if (_sessionWins >= sessionWins)
+                    {
+                        #if UNITY_IOS
+                        result = await RequestIOSReview();
+                        #elif UNITY_ANDROID
+                        result = await RequestAndroidReview();
+                        #endif
+                        _sessionTimesShown++;
+                        _sessionWins = 0;
+                        AddViewToVersion();
+                    }
+                }
+            }
+            return result;
+        }
+
+        private Task<TaskResult> RequestIOSReview()
+        {        
+            var tcs = new TaskCompletionSource<TaskResult>();
+
+            #if UNITY_IOS && !UNITY_EDITOR
+            RequestReview();
+            #endif
+
+            tcs.SetResult(new TaskResult(true, "iOS: In-App Review requested!"));
+            return tcs.Task;
+        }
+
+        private async Task<TaskResult> RequestAndroidReview()
+        {
+            var requestFlowOperation = _reviewManager.RequestReviewFlow();
+
+            await AwaitPlayCoreTask(requestFlowOperation);
+
+            if (requestFlowOperation.Error != ReviewErrorCode.NoError)
+            {
+                return new TaskResult(false, $"Android: RequestReviewFlow failed: {requestFlowOperation.Error}");
+            }
+
+            PlayReviewInfo playReviewInfo = requestFlowOperation.GetResult();
+
+            var launchFlowOperation = _reviewManager.LaunchReviewFlow(playReviewInfo);
+
+            await AwaitPlayCoreTask(launchFlowOperation);
+
+            if (launchFlowOperation.Error != ReviewErrorCode.NoError)
+            {
+                return new TaskResult(false, $"Android: LaunchReviewFlow failed: {launchFlowOperation.Error}");
+            }
+
+            return new TaskResult(true, "Android: In-app review shown successfully.");
+        }
+
+        // Helper to await Play Core operations
+        private Task AwaitPlayCoreTask<T>(PlayAsyncOperation<T, ReviewErrorCode> operation)
+        {
+            var tcs = new TaskCompletionSource<object>();
+            operation.Completed += _ => tcs.SetResult(null);
+            return tcs.Task;
+        }
+    }
+
+    public struct TaskResult
+    {
+        public bool succeed;
+        public string msg;
+
+        public TaskResult(bool success, string message)
+        {
+            succeed = success;
+            msg = message;
         }
     }
 }
