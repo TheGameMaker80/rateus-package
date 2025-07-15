@@ -3,9 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-using Google.Play.Review;
 using System.Threading.Tasks;
-using Google.Play.Common;
+
 
 namespace alexnikolaou.RateUs
 {
@@ -34,9 +33,6 @@ namespace alexnikolaou.RateUs
         private int _sessionTimesShown;
 
         private VersionRates _versionRates;
-
-        //Create instance of ReviewManager(Android)
-        private ReviewManager _reviewManager;
 
         public bool Initialized
         {
